@@ -1,0 +1,292 @@
+/* Cyberpunk Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Orbitron', 'Segoe UI', sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #000000 0%, #0a0a2a 50%, #1a1a1a 100%);
+  min-height: 100vh;
+  color: #00ffff;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Cyberpunk background elements */
+.grid-lines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: gridMove 20s infinite linear;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes gridMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 50px 50px; }
+}
+
+.neon-glow {
+  position: fixed;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  filter: blur(100px);
+  animation: pulse 4s infinite alternate;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.neon-glow:nth-child(1) {
+  top: -250px;
+  left: -250px;
+  background: radial-gradient(circle, rgba(0, 255, 255, 0.2) 0%, transparent 70%);
+}
+
+.neon-glow:nth-child(2) {
+  bottom: -250px;
+  right: -250px;
+  background: radial-gradient(circle, rgba(255, 0, 128, 0.2) 0%, transparent 70%);
+}
+
+@keyframes pulse {
+  0% { opacity: 0.3; transform: scale(1); }
+  100% { opacity: 0.6; transform: scale(1.1); }
+}
+
+.scan-lines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.03) 50%,
+    rgba(0, 0, 0, 0.1) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* App Container */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Cyberpunk UI Components */
+.cyberpunk-card {
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid rgba(0, 255, 255, 0.3);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 
+    0 0 50px rgba(0, 255, 255, 0.2),
+    0 0 100px rgba(255, 0, 128, 0.1) inset;
+  backdrop-filter: blur(10px);
+  width: 100%;
+  max-width: 800px;
+}
+
+.cyberpunk-title {
+  font-size: 3rem;
+  background: linear-gradient(45deg, #00ffff, #ff0080, #00ff88);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.cyberpunk-subtitle {
+  color: rgba(0, 255, 255, 0.8);
+  font-size: 1.2rem;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.cyberpunk-input {
+  width: 100%;
+  padding: 20px;
+  border: 2px solid rgba(0, 255, 255, 0.3);
+  border-radius: 15px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #00ffff;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.cyberpunk-input:focus {
+  outline: none;
+  border-color: #ff0080;
+  box-shadow: 0 0 30px rgba(255, 0, 128, 0.4);
+  transform: translateY(-2px);
+}
+
+.cyberpunk-input::placeholder {
+  color: rgba(0, 255, 255, 0.5);
+}
+
+.cyberpunk-btn {
+  padding: 20px 30px;
+  border: none;
+  border-radius: 15px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: linear-gradient(45deg, #00ffff, #00ff88);
+  color: black;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 50px rgba(0, 255, 255, 0.6);
+}
+
+.btn-secondary {
+  background: linear-gradient(45deg, #ff0080, #ff00ff);
+  color: white;
+  box-shadow: 0 0 30px rgba(255, 0, 128, 0.4);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 50px rgba(255, 0, 128, 0.6);
+}
+
+.btn-danger {
+  background: linear-gradient(45deg, #ff6b6b, #c44569);
+  color: white;
+  box-shadow: 0 0 30px rgba(255, 107, 107, 0.4);
+}
+
+/* Color swatch */
+.color-swatch {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  border: 3px solid #00ffff;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+  margin: 0 auto;
+}
+
+/* Error messages */
+.cyberpunk-error {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 15px;
+  border-radius: 10px;
+  margin: 15px 0;
+  border-left: 4px solid #ff6b6b;
+  text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+}
+
+/* Player info */
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.player-color-badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #00ffff;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+}
+
+.player-name {
+  color: #00ffff;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 10px;
+  }
+  
+  .cyberpunk-card {
+    padding: 30px 20px;
+    margin: 10px;
+  }
+  
+  .cyberpunk-title {
+    font-size: 2.2rem;
+  }
+  
+  .cyberpunk-btn {
+    padding: 15px 20px;
+    font-size: 1rem;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(45deg, #00ffff, #ff0080);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(45deg, #ff0080, #00ffff);
+}
+@keyframes pulse {
+  0% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+@keyframes rotate {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes neonPulse {
+  from {
+    box-shadow: 0 0 10px rgba(255, 0, 128, 0.3);
+    border-color: rgba(255, 0, 128, 0.3);
+  }
+  to {
+    box-shadow: 0 0 20px rgba(255, 0, 128, 0.6);
+    border-color: rgba(255, 0, 128, 0.6);
+  }
+}
