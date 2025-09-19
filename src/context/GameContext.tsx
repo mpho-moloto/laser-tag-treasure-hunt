@@ -67,7 +67,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Initialize socket connection
-    const newSocket = io(process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5000");
+const newSocket = io(process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5002");
     setSocket(newSocket);
 
     // Socket event listeners
