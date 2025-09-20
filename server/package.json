@@ -4,9 +4,8 @@
   "main": "index.ts",
   "scripts": {
     "dev": "ts-node index.ts",
-    "build": "npx tsc",
-    "start": "node index.js",
-    "postinstall": "npm run build"
+    "build": "echo 'Build step skipped - using ts-node'",
+    "start": "ts-node index.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
