@@ -1,7 +1,7 @@
 // server/sockets.ts
 import { Server, Socket } from "socket.io";
 import { joinLobby, handleShoot, handlePurchase, startGame, lobbies } from "./gameLogic";
-import { Player, Weapon } from "../src/utils/constants";
+import { Player, Weapon } from "./types";
 
 
 export function setupSockets(io: Server) {

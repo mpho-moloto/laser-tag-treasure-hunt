@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, ReactNode, useContext } from "react";
 import io from "socket.io-client";
-import { Player, Lobby, Weapon, GameState as GameStateType } from "../utils/constants";
+import { Player, Lobby, Weapon, GameState as GameStateType } from "../../server/types";
 
 // Add this type definition
 interface Socket {

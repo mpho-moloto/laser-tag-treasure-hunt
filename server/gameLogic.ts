@@ -1,4 +1,4 @@
-import { Player, Lobby, Weapon, GameState, GAME_SETTINGS, WEAPON_STATS } from "../src/utils/constants";
+import { Player, Lobby, Weapon, GameState, GAME_SETTINGS, WEAPON_STATS } from "./types";
 
 // Map of lobbies by ID
 export const lobbies: Record<number, GameState> = {};

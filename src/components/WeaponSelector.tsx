@@ -1,6 +1,6 @@
 import React from "react";
 import { useGame } from "../context/GameContext";
-import { Weapon } from "../utils/constants";
+import { Weapon } from "../../server/types";
 
 const WeaponSelector: React.FC = () => {
   const { player, gameState, purchaseItem } = useGame();

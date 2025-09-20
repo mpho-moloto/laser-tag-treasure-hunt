@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useGame } from "../context/GameContext";
 import { getDominantColor } from "../utils/colorDetection";
-import { Player, Weapon } from "../utils/constants";
+// If your types file is actually 'types.ts' in the same folder, use:
+import { Player, Weapon } from "../../server/types";
+// Or update the path/filename as needed to match your project structure.
 
 const LoginScreen: React.FC = () => {
   const { setPlayer, setCurrentView } = useGame();
@@ -32,7 +34,7 @@ const LoginScreen: React.FC = () => {
 
   const handleConfirm = () => {
     if (!playerName || !detectedColor) return;
-    const newPlayer: Player = { id: Date.now(), name: playerName, color: detectedColor, score: 0,
+    const newPlayer: Player = { id: Date.now(), name: playerName, color: detectedColor, score: 0, points: 0,
       weapons: ["pistol"] as Weapon[], currentWeapon: "pistol", ammo: 6, lives: 3 };
     setPlayer(newPlayer); setCurrentView("lobby");
   };
