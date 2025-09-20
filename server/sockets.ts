@@ -70,6 +70,37 @@ export function setupSockets(io: Server) {
       }
     });
 
+    // --- ADDITIONAL EVENTS FOR GAME FUNCTIONALITY ---
+    // Send all available lobbies to client
+    socket.on("get-lobbies", () => {
+      socket.emit("available-lobbies", Object.values(lobbies).map(l => l.lobby));
+    });
+
+    // Handle player leaving a lobby
+    socket.on("leave-lobby", (data: { playerId: number, lobbyId: number }) => {
+      const { playerId, lobbyId } = data;
+      const lobbyState = lobbies[lobbyId];
+      if (lobbyState) {
+        // Remove player from lobby
+        lobbyState.lobby.players = lobbyState.lobby.players.filter(p => p.id !== playerId);
+        // If lobby is empty, delete it
+        if (lobbyState.lobby.players.length === 0) {
+          delete lobbies[lobbyId];
+        } else {
+          io.to(`lobby-${lobbyId}`).emit("lobby-update", lobbyState);
+        }
+        // Notify all clients of available lobbies
+        io.emit("available-lobbies", Object.values(lobbies).map(l => l.lobby));
+      }
+      socket.leave(`lobby-${lobbyId}`);
+    });
+
+    // Handle spectator leaving a lobby
+    socket.on("leave-spectator", (data: { lobbyId: number }) => {
+      const { lobbyId } = data;
+      socket.leave(`spectator-${lobbyId}`);
+    });
+
     // Handle disconnection
     socket.on("disconnect", () => {
       console.log(`Client disconnected: ${socket.id}`);
