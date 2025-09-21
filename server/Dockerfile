@@ -26,4 +26,4 @@ EXPOSE 5001
 ENV NODE_ENV=production
 
 # Start the application
-CMD ["node", "dist/server/index.js"]
+CMD ["node", "dist/index.js"]
