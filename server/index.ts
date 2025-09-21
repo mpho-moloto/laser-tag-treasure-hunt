@@ -10,6 +10,7 @@ const server = http.createServer(app);
 // Update CORS to allow Vercel domain
 const allowedOrigins = [
   "http://localhost:3000",
+  "https://localhost:3000",
   "https://lasertag-ten.vercel.app", //Vercel URL
   process.env.CLIENT_URL
 ].filter((origin): origin is string => typeof origin === "string");
@@ -17,7 +18,9 @@ const allowedOrigins = [
 // Middleware
 app.use(cors({
   origin: allowedOrigins,
-  credentials: true
+  credentials: true,
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(express.json());
 
@@ -33,14 +36,15 @@ const io = new Server(server, {
 setupSockets(io);
 
 app.get("/", (req, res) => {
-  res.json({ status: "OK", message: "Laser Tag Server Running!" });
+  res.json({ status: "OK", message: "Laser Tag Server Running!", timestamp: new Date().toISOString() });
 });
 
 app.get("/health", (req, res) => {
-  res.json({ status: "OK", message: "Laser Tag Server Running!" });
+  res.json({ status: "OK", message: "Laser Tag Server Running!", environment: process.env.NODE_ENV || "development" });
 });
 
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
+  console.log(`Allowed origins: ${allowedOrigins.join(", ")}`);
 });

@@ -1,14 +1,19 @@
 /** @type {import('next').NextConfig} */
-
-module.exports = {
+const nextConfig = {
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: true, // This fixes your ESLint errors from before
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/:path*`,
+      },
+    ];
   },
 }
-const nextConfig = {
-  turbopack: {
-    root: process.cwd(), // Set root to project directory
-  },
-};
 
-export default nextConfig;
+module.exports = nextConfig
