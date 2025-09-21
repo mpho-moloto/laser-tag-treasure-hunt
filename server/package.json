@@ -1,7 +1,7 @@
 {
   "name": "laser-tag-server",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "dist/server/index.js",
   "scripts": {
     "dev": "ts-node index.ts",
     "build": "tsc",
