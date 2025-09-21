@@ -9,4 +9,4 @@ README.md
 coverage
 .nyc_output
 .coverage
-*.log
+_.log
