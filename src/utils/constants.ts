@@ -1,4 +1,11 @@
-export type Weapon = "pistol" | "shotgun" | "rifle";
+export interface Weapon {
+  name: "pistol" | "shotgun" | "rifle";
+  damage: number;
+  ammoCapacity: number;
+  reloadTime: number;
+  fireRate: number;
+  cost: number;
+}
 
 export interface Player {
   id: number;
@@ -9,9 +16,13 @@ export interface Player {
   currentWeapon: Weapon;
   ammo: number;
   lives: number;
-  x?: number;
-  y?: number;
-  hasPowerUp?: boolean;
+  hasPowerUp: boolean;
+  isSpectator: boolean;
+  isReady: boolean;
+  lastShotTime: number;
+  isReloading: boolean;
+  kills: number;
+  deaths: number;
 }
 
 export interface Lobby {
@@ -19,6 +30,7 @@ export interface Lobby {
   name: string;
   players: Player[];
   maxPlayers: number;
+  state: "waiting" | "pregame" | "active" | "finished";
 }
 
 export interface GameState {
@@ -28,17 +40,17 @@ export interface GameState {
   points: number;
 }
 
-// Weapon stats
-export const WEAPON_STATS: Record<Weapon, { ammoCapacity: number; reloadTime: number; damage: number }> = {
-  pistol: { ammoCapacity: 6, reloadTime: 1500, damage: 10 },
-  shotgun: { ammoCapacity: 2, reloadTime: 2000, damage: 25 },
-  rifle: { ammoCapacity: 30, reloadTime: 2500, damage: 15 },
-};
+export const WEAPONS: Weapon[] = [
+  { name: "pistol", damage: 1, ammoCapacity: 6, reloadTime: 1500, fireRate: 1, cost: 0 },
+  { name: "shotgun", damage: 3, ammoCapacity: 2, reloadTime: 2000, fireRate: 0.5, cost: 300 },
+  { name: "rifle", damage: 2, ammoCapacity: 30, reloadTime: 2500, fireRate: 4, cost: 500 },
+];
 
-// Game settings
 export const GAME_SETTINGS = {
   MAX_PLAYERS_PER_LOBBY: 8,
-  GAME_TIMER_SECONDS: 240,
   POINTS_PER_HIT: 100,
-  STARTING_AMMO: 6,
+  POINTS_PER_KILL: 500,
+  INITIAL_LIVES: 3,
+  GAME_DURATION: 300,
+  RESPAWN_TIME: 5000,
 };

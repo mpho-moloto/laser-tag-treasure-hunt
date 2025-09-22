@@ -10,7 +10,7 @@ interface Socket {
   off(event: string, callback?: (data: any) => void): void;
 }
 
-export const socket: Socket = io(process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5001");
+export const socket: Socket = io(process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5003");
 
 
 

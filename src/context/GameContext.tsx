@@ -2,7 +2,6 @@ import React, { createContext, useState, useEffect, ReactNode, useContext } from
 import io from "socket.io-client";
 import { Player, Lobby, Weapon, GameState as GameStateType } from "../utils/constants";
 
-// Add this type definition
 interface Socket {
   id: string;
   connected: boolean;
@@ -13,48 +12,38 @@ interface Socket {
 }
 
 interface GameContextType {
-  // Player state
   player: Player | null;
   setPlayer: (player: Player) => void;
-  
-  // Lobby state
   currentLobby: Lobby | null;
   availableLobbies: Lobby[];
-  
-  // Game state
   gameState: GameStateType | null;
   isGameActive: boolean;
-  
-  // Socket
   socket: Socket | null;
-  
-  // Views
   currentView: string;
   setCurrentView: (view: string) => void;
-  
-  // Actions
   createLobby: (name: string) => void;
   joinLobby: (lobbyId: number) => void;
   startGame: () => void;
   shoot: (targetColor: string) => void;
   purchaseItem: (type: "weapon" | "life" | "powerup", item?: Weapon) => void;
   reloadWeapon: () => void;
-  spectateLobby: (lobbyId: number) => void; // ADDED
+  spectateLobby: (lobbyId: number) => void;
+  error: string;
+  setError: (error: string) => void;
+  leaveLobby: () => void;
+  playerReady: (isReady: boolean) => void;
+  switchWeapon: (weaponName: string) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const useGame = () => {
   const context = useContext(GameContext);
-  if (!context) {
-    throw new Error("useGame must be used within a GameProvider");
-  }
+  if (!context) throw new Error("useGame must be used within a GameProvider");
   return context;
 };
 
-interface GameProviderProps {
-  children: ReactNode;
-}
+interface GameProviderProps { children: ReactNode }
 
 export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [player, setPlayer] = useState<Player | null>(null);
@@ -64,113 +53,220 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [isGameActive, setIsGameActive] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [currentView, setCurrentView] = useState("login");
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    // Initialize socket connection
-const newSocket = io(process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5002");
+    console.log("🔄 Initializing socket connection...");
+    const newSocket = io(process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:5003");
     setSocket(newSocket);
 
-    // Socket event listeners
-    newSocket.on("lobby-update", (lobby: Lobby) => {
-      setCurrentLobby(lobby);
+    // Connection events
+    newSocket.on("connect", () => {
+      console.log("✅ Connected to server");
+      setError("");
     });
 
-    newSocket.on("game-started", (gameState: GameStateType) => {
-      setGameState(gameState);
+    newSocket.on("connect_error", (error: Error) => {
+      console.error("❌ Connection error:", error);
+      setError("Failed to connect to server. Please check if server is running.");
+    });
+
+    // Lobby updates
+    newSocket.on("lobby-update", (lobby: Lobby) => {
+      console.log("📋 Lobby update received:", lobby.id, lobby.name, "State:", lobby.state);
+      setCurrentLobby(lobby);
+      setError("");
+    });
+
+    newSocket.on("available-lobbies", (lobbies: Lobby[]) => {
+      console.log("📊 Available lobbies:", lobbies.length);
+      setAvailableLobbies(lobbies);
+    });
+
+    newSocket.on("game-started", (state: GameStateType) => {
+      console.log("🎮 Game started!");
+      setGameState(state);
       setIsGameActive(true);
       setCurrentView("game");
     });
 
-    newSocket.on("game-update", (gameState: GameStateType) => {
-      setGameState(gameState);
+    newSocket.on("game-update", (state: GameStateType) => {
+      setGameState(state);
     });
 
-    newSocket.on("game-over", (winner: Player) => {
+    newSocket.on("game-over", () => {
+      console.log("🏆 Game over");
       setIsGameActive(false);
       setCurrentView("winner");
     });
 
-    newSocket.on("available-lobbies", (lobbies: Lobby[]) => {
-      setAvailableLobbies(lobbies);
+    newSocket.on("lobby-error", (errorMessage: string) => {
+      console.error("❌ Lobby error:", errorMessage);
+      setError(errorMessage);
     });
 
+    // NEW: Handle player disconnects from lobby
+    newSocket.on("player-left", (data: { playerId: number; lobbyId: number }) => {
+      console.log("🚪 Player left lobby:", data.playerId);
+      if (currentLobby && currentLobby.id === data.lobbyId) {
+        setCurrentLobby(prev => prev ? {
+          ...prev,
+          players: prev.players.filter(p => p.id !== data.playerId)
+        } : null);
+      }
+    });
+
+    // Request initial lobbies
+    newSocket.emit("get-lobbies");
+
     return () => {
+      console.log("🧹 Cleaning up socket connection");
+      if (currentLobby && player) {
+        newSocket.emit("leave-lobby", { 
+          playerId: player.id, 
+          lobbyId: currentLobby.id 
+        });
+      }
       newSocket.disconnect();
     };
   }, []);
 
   const createLobby = (name: string) => {
-    if (!player || !socket) return;
-    
-    const lobbyId = Date.now();
-    socket.emit("join-lobby", { player, lobbyId });
-    
-    const newLobby: Lobby = {
-      id: lobbyId,
-      name,
-      players: [player],
-      maxPlayers: 8
-    };
-    
-    setCurrentLobby(newLobby);
-    setCurrentView("lobby");
+    if (!player || !socket) {
+      setError("Not connected to server");
+      return;
+    }
+
+    if (!name.trim()) {
+      setError("Please enter a lobby name");
+      return;
+    }
+
+    console.log("🎯 Creating lobby:", name);
+    setError("");
+
+    socket.emit("create-lobby", { player, name });
   };
 
   const joinLobby = (lobbyId: number) => {
-    if (!player || !socket) return;
+    if (!player || !socket) {
+      setError("Not connected to server");
+      return;
+    }
+
+    console.log("👥 Joining lobby:", lobbyId);
+    setError("");
     socket.emit("join-lobby", { player, lobbyId });
+  };
+
+  const leaveLobby = () => {
+    if (!player || !currentLobby || !socket) return;
+    
+    socket.emit("leave-lobby", { 
+      playerId: player.id, 
+      lobbyId: currentLobby.id 
+    });
+    
+    setCurrentLobby(null);
     setCurrentView("lobby");
   };
 
-  const spectateLobby = (lobbyId: number) => { // ADDED FUNCTION
-    if (!socket) return;
+  const playerReady = (isReady: boolean) => {
+    if (!player || !currentLobby || !socket) return;
+    
+    socket.emit("player-ready", {
+      playerId: player.id,
+      lobbyId: currentLobby.id,
+      isReady
+    });
+  };
+
+  const spectateLobby = (lobbyId: number) => {
+    if (!socket) {
+      setError("Not connected to server");
+      return;
+    }
+
+    console.log("👁️ Spectating lobby:", lobbyId);
+    setError("");
     socket.emit("spectate-lobby", { lobbyId });
     setCurrentView("spectator");
   };
 
   const startGame = () => {
-    if (!currentLobby || !socket) return;
+    if (!currentLobby || !socket) {
+      setError("Not in a lobby");
+      return;
+    }
+
+    if (currentLobby.players.length < 2) {
+      setError("Need at least 2 players to start");
+      return;
+    }
+
+    // NEW: Only allow starting from pregame state
+    if (currentLobby.state !== "pregame") {
+      setError("Game can only be started from preparation phase");
+      return;
+    }
+
+    console.log("🚀 Starting game");
+    setError("");
     socket.emit("start-game", { lobbyId: currentLobby.id });
   };
 
   const shoot = (targetColor: string) => {
     if (!player || !currentLobby || !socket) return;
-    socket.emit("shoot", { 
-      playerId: player.id, 
-      targetColor, 
-      lobbyId: currentLobby.id 
-    });
+    
+    // NEW: Only allow shooting in active state
+    if (currentLobby.state !== "active") {
+      setError("Game is not active");
+      return;
+    }
+    
+    socket.emit("shoot", { playerId: player.id, targetColor, lobbyId: currentLobby.id });
   };
 
   const purchaseItem = (type: "weapon" | "life" | "powerup", item?: Weapon) => {
     if (!player || !currentLobby || !socket) return;
-    socket.emit("purchase", {
-      playerId: player.id,
-      type,
-      item,
-      lobbyId: currentLobby.id
-    });
+    
+    // NEW: Only allow purchases in pregame state
+    if (currentLobby.state !== "pregame") {
+      setError("Purchases only allowed in preparation phase");
+      return;
+    }
+    
+    socket.emit("purchase", { playerId: player.id, type, item, lobbyId: currentLobby.id });
   };
 
   const reloadWeapon = () => {
-    if (!player || !gameState) return;
+    if (!player || !currentLobby || !socket) return;
     
-    const weaponStats = {
-      pistol: { ammoCapacity: 6, reloadTime: 1500 },
-      shotgun: { ammoCapacity: 2, reloadTime: 2000 },
-      rifle: { ammoCapacity: 30, reloadTime: 2500 }
-    };
+    // NEW: Only allow reloading in active state
+    if (currentLobby.state !== "active") {
+      setError("Game is not active");
+      return;
+    }
     
-    setGameState({
-      ...gameState,
-      lobby: {
-        ...gameState.lobby,
-        players: gameState.lobby.players.map(p => 
-          p.id === player.id 
-            ? { ...p, ammo: weaponStats[p.currentWeapon].ammoCapacity }
-            : p
-        )
-      }
+    socket.emit("reload-weapon", { 
+      playerId: player.id, 
+      lobbyId: currentLobby.id 
+    });
+  };
+
+  const switchWeapon = (weaponName: string) => {
+    if (!player || !currentLobby || !socket) return;
+    
+    // NEW: Allow weapon switching in both pregame and active states
+    if (currentLobby.state !== "pregame" && currentLobby.state !== "active") {
+      setError("Cannot switch weapons now");
+      return;
+    }
+    
+    socket.emit("switch-weapon", { 
+      playerId: player.id, 
+      weaponName, 
+      lobbyId: currentLobby.id 
     });
   };
 
@@ -190,12 +286,13 @@ const newSocket = io(process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:500
     shoot,
     purchaseItem,
     reloadWeapon,
-    spectateLobby // ADDED
+    spectateLobby,
+    error,
+    setError,
+    leaveLobby,
+    playerReady,
+    switchWeapon
   };
 
-  return (
-    <GameContext.Provider value={value}>
-      {children}
-    </GameContext.Provider>
-  );
+  return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 };

@@ -1,93 +1,214 @@
-import { Player, Lobby, Weapon, GameState, GAME_SETTINGS, WEAPON_STATS } from "../src/utils/constants";
+import { Player, Lobby, Weapon, WEAPONS, GAME_SETTINGS } from "../src/utils/constants";
 
-// Map of lobbies by ID
-export const lobbies: Record<number, GameState> = {};
+export const lobbies: Record<number, { lobby: Lobby; active: boolean; gameStartTime: number }> = {};
 
-// Handle joining a lobby
-export function joinLobby(player: Player, lobbyId: number, lobbyName?: string): GameState {
-  let lobbyState = lobbies[lobbyId];
+// Initialize player with proper defaults
+function initializePlayer(player: Player): Player {
+  const defaultWeapon = WEAPONS[0];
+  return {
+    ...player,
+    score: 0,
+    weapons: player.weapons?.length ? player.weapons : [defaultWeapon],
+    currentWeapon: player.currentWeapon || defaultWeapon,
+    ammo: player.ammo || defaultWeapon.ammoCapacity,
+    lives: player.lives || GAME_SETTINGS.INITIAL_LIVES,
+    hasPowerUp: player.hasPowerUp || false,
+    isSpectator: player.isSpectator || false,
+    isReady: false,
+    lastShotTime: 0,
+    isReloading: false,
+    kills: 0,
+    deaths: 0
+  };
+}
 
-  if (!lobbyState) {
-    // Create a new lobby if it doesn't exist
-    const newLobby: GameState = {
-      lobby: {
-        id: lobbyId,
-        name: lobbyName || `Lobby-${lobbyId}`,
-        players: [player],
-        maxPlayers: GAME_SETTINGS.MAX_PLAYERS_PER_LOBBY,
-      },
-      active: false,
-      elapsedTime: 0,
-      points: 0,
-    };
-    lobbies[lobbyId] = newLobby;
-    return newLobby;
+export function createLobby(player: Player, lobbyId: number, name: string) {
+  if (lobbies[lobbyId]) {
+    console.log("❌ Lobby already exists:", lobbyId);
+    return null;
   }
 
-  // Add player if lobby exists and not full
-  if (lobbyState.lobby.players.length < lobbyState.lobby.maxPlayers) {
-    // Check if player already exists (reconnection)
-    const existingPlayerIndex = lobbyState.lobby.players.findIndex(p => p.id === player.id);
-    if (existingPlayerIndex !== -1) {
-      lobbyState.lobby.players[existingPlayerIndex] = player;
-    } else {
-      lobbyState.lobby.players.push(player);
+  const initializedPlayer = initializePlayer(player);
+  
+  const newLobby: Lobby = {
+    id: lobbyId,
+    name: name || `Battle ${lobbyId}`,
+    players: [initializedPlayer],
+    maxPlayers: GAME_SETTINGS.MAX_PLAYERS_PER_LOBBY,
+    state: "waiting"
+  };
+
+  lobbies[lobbyId] = { lobby: newLobby, active: false, gameStartTime: 0 };
+  console.log("✅ Created lobby:", lobbyId, "with name:", name);
+  return lobbies[lobbyId];
+}
+
+export function joinLobby(player: Player, lobbyId: number) {
+  const lobbyState = lobbies[lobbyId];
+  if (!lobbyState) {
+    console.log("❌ Lobby not found:", lobbyId);
+    return null;
+  }
+
+  if (lobbyState.lobby.players.find(p => p.id === player.id)) {
+    console.log("ℹ️ Player already in lobby:", player.id);
+    return lobbyState;
+  }
+
+  if (lobbyState.lobby.players.length >= lobbyState.lobby.maxPlayers) {
+    console.log("❌ Lobby is full:", lobbyId);
+    return null;
+  }
+
+  const initializedPlayer = initializePlayer(player);
+  lobbyState.lobby.players.push(initializedPlayer);
+  console.log("✅ Player joined lobby:", player.name, "Lobby:", lobbyId);
+  return lobbyState;
+}
+
+export function leaveLobby(playerId: number, lobbyId: number) {
+  const lobbyState = lobbies[lobbyId];
+  if (!lobbyState) {
+    console.log("❌ Lobby not found for leave:", lobbyId);
+    return null;
+  }
+
+  // Remove player from lobby
+  lobbyState.lobby.players = lobbyState.lobby.players.filter(p => p.id !== playerId);
+  console.log("✅ Player left lobby:", playerId, "from lobby:", lobbyId);
+
+  // Delete lobby if empty
+  if (lobbyState.lobby.players.length === 0) {
+    delete lobbies[lobbyId];
+    console.log("🗑️ Deleted empty lobby:", lobbyId);
+    return null;
+  }
+
+  return lobbyState;
+}
+
+export function setPlayerReady(playerId: number, lobbyId: number, isReady: boolean) {
+  const lobbyState = lobbies[lobbyId];
+  if (!lobbyState) return null;
+
+  const player = lobbyState.lobby.players.find(p => p.id === playerId);
+  if (player) {
+    player.isReady = isReady;
+    console.log("✅ Player ready state:", player.name, "ready:", isReady);
+    
+    // Check if all players are ready to move to pregame
+    const allReady = lobbyState.lobby.players.every(p => p.isReady);
+    if (allReady && lobbyState.lobby.players.length >= 2 && lobbyState.lobby.state === "waiting") {
+      lobbyState.lobby.state = "pregame";
+      console.log("✅ All players ready, moving to pregame phase");
     }
   }
 
   return lobbyState;
 }
 
-// Start game
-export function startGame(lobbyId: number): GameState | null {
+export function startGame(lobbyId: number) {
   const lobbyState = lobbies[lobbyId];
-  if (!lobbyState || lobbyState.lobby.players.length < 2) return null;
+  if (!lobbyState) {
+    console.log("❌ Lobby not found for start game:", lobbyId);
+    return null;
+  }
 
-  lobbyState.active = true;
-  lobbyState.elapsedTime = 0;
-  
+  if (lobbyState.lobby.players.length < 2) {
+    console.log("❌ Need at least 2 players to start");
+    return null;
+  }
+
   // Reset player states for new game
   lobbyState.lobby.players.forEach(player => {
-    player.lives = 3;
-    player.ammo = WEAPON_STATS[player.currentWeapon].ammoCapacity;
     player.score = 0;
+    player.lives = GAME_SETTINGS.INITIAL_LIVES;
+    player.ammo = player.currentWeapon.ammoCapacity;
+    player.hasPowerUp = false;
+    player.kills = 0;
+    player.deaths = 0;
+    player.isReloading = false;
+    player.isReady = false;
   });
 
+  lobbyState.active = true;
+  lobbyState.lobby.state = "active";
+  lobbyState.gameStartTime = Date.now();
+  console.log("✅ Game started in lobby:", lobbyId);
+  
   return lobbyState;
 }
 
-// Handle shooting
-export function handleShoot(playerId: number, targetColor: string, lobbyId: number): GameState | null {
+export function handleShoot(playerId: number, targetColor: string, lobbyId: number) {
   const lobbyState = lobbies[lobbyId];
   if (!lobbyState || !lobbyState.active) return null;
 
   const shooter = lobbyState.lobby.players.find(p => p.id === playerId);
-  if (!shooter || shooter.color === targetColor) return null; // cannot shoot self
-
-  const target = lobbyState.lobby.players.find(p => p.color === targetColor);
-  if (!target || target.lives <= 0) return null; // target not found or already dead
+  const target = lobbyState.lobby.players.find(p => p.color === targetColor && p.id !== playerId && p.lives > 0);
+  
+  if (!shooter || !target || shooter.lives <= 0) return lobbyState;
 
   // Check ammo
-  if (shooter.ammo <= 0) return null;
-  shooter.ammo -= 1;
-
-  // Apply damage
-  const weaponStats = WEAPON_STATS[shooter.currentWeapon];
-  target.lives -= 1;
-
-  // Award points
-  shooter.score += GAME_SETTINGS.POINTS_PER_HIT;
-  if (target.lives <= 0) {
-    shooter.score += GAME_SETTINGS.POINTS_PER_HIT * 2; // bonus for elimination
+  if (shooter.ammo <= 0) {
+    startReload(shooter);
+    return lobbyState;
   }
 
-  lobbyState.points += GAME_SETTINGS.POINTS_PER_HIT;
+  // Check cooldown
+  const now = Date.now();
+  const timeBetweenShots = 1000 / shooter.currentWeapon.fireRate;
+  if (now - shooter.lastShotTime < timeBetweenShots) {
+    return lobbyState;
+  }
+
+  // Consume ammo
+  shooter.ammo--;
+  shooter.lastShotTime = now;
+
+  // Apply damage
+  const damage = shooter.hasPowerUp ? shooter.currentWeapon.damage * 2 : shooter.currentWeapon.damage;
+  target.lives -= damage;
+  
+  // Award points
+  shooter.score += GAME_SETTINGS.POINTS_PER_HIT;
+
+  // Check if target died
+  if (target.lives <= 0) {
+    target.lives = 0;
+    target.deaths++;
+    shooter.kills++;
+    shooter.score += GAME_SETTINGS.POINTS_PER_KILL;
+    
+    // Check for game end
+    checkGameEnd(lobbyState);
+  }
 
   return lobbyState;
 }
 
-// Handle purchasing
-export function handlePurchase(playerId: number, type: "weapon" | "life" | "powerup", item?: Weapon, lobbyId?: number): GameState | null {
+function startReload(player: Player) {
+  if (player.isReloading || player.ammo === player.currentWeapon.ammoCapacity) return;
+
+  player.isReloading = true;
+  
+  setTimeout(() => {
+    player.ammo = player.currentWeapon.ammoCapacity;
+    player.isReloading = false;
+  }, player.currentWeapon.reloadTime);
+}
+
+export function handleReload(playerId: number, lobbyId: number) {
+  const lobbyState = lobbies[lobbyId];
+  if (!lobbyState) return null;
+
+  const player = lobbyState.lobby.players.find(p => p.id === playerId);
+  if (!player || player.isReloading) return null;
+
+  startReload(player);
+  return lobbyState;
+}
+
+export function handlePurchase(playerId: number, type: "weapon" | "life" | "powerup", item?: Weapon, lobbyId?: number) {
   if (!lobbyId) return null;
   const lobbyState = lobbies[lobbyId];
   if (!lobbyState) return null;
@@ -95,38 +216,89 @@ export function handlePurchase(playerId: number, type: "weapon" | "life" | "powe
   const player = lobbyState.lobby.players.find(p => p.id === playerId);
   if (!player) return null;
 
-  let cost = 0;
   switch (type) {
-    case "weapon":
-      cost = 300;
-      break;
     case "life":
-      cost = 200;
+      if (player.score >= 200) {
+        player.lives++;
+        player.score -= 200;
+      }
       break;
+      
+    case "weapon":
+      if (item && player.score >= item.cost) {
+        const alreadyOwned = player.weapons.some(w => w.name === item.name);
+        
+        if (!alreadyOwned) {
+          player.weapons.push(item);
+          player.score -= item.cost;
+        }
+        
+        player.currentWeapon = item;
+        player.ammo = item.ammoCapacity;
+      }
+      break;
+      
     case "powerup":
-      cost = 500;
+      if (player.score >= 1000 && !player.hasPowerUp) {
+        player.hasPowerUp = true;
+        player.score -= 1000;
+        
+        setTimeout(() => {
+          player.hasPowerUp = false;
+        }, 30000);
+      }
       break;
-  }
-
-  if (player.score < cost) return null; // not enough points
-
-  player.score -= cost;
-
-  if (type === "weapon" && item) {
-    if (!player.weapons.includes(item)) {
-      player.weapons.push(item);
-      player.currentWeapon = item;
-      player.ammo = WEAPON_STATS[item].ammoCapacity;
-    }
-  } else if (type === "life") {
-    player.lives += 1;
-  } else if (type === "powerup") {
-    player.hasPowerUp = true;
-    // Powerup lasts for 30 seconds
-    setTimeout(() => {
-      player.hasPowerUp = false;
-    }, 30000);
   }
 
   return lobbyState;
+}
+
+export function handleWeaponSwitch(playerId: number, weaponName: string, lobbyId: number) {
+  const lobbyState = lobbies[lobbyId];
+  if (!lobbyState) return null;
+
+  const player = lobbyState.lobby.players.find(p => p.id === playerId);
+  if (!player) return null;
+
+  const weapon = player.weapons.find(w => w.name === weaponName);
+  if (weapon) {
+    player.currentWeapon = weapon;
+    player.ammo = weapon.ammoCapacity;
+  }
+
+  return lobbyState;
+}
+
+function checkGameEnd(lobbyState: any) {
+  const alivePlayers = lobbyState.lobby.players.filter((p: Player) => p.lives > 0);
+  
+  if (alivePlayers.length <= 1) {
+    lobbyState.active = false;
+    lobbyState.lobby.state = "finished";
+    
+    if (alivePlayers.length === 1) {
+      const winner = alivePlayers[0];
+      winner.score += 1000;
+    }
+    
+    return true;
+  }
+  
+  return false;
+}
+
+export function getGameTimeRemaining(lobbyId: number): number {
+  const lobbyState = lobbies[lobbyId];
+  if (!lobbyState || !lobbyState.active) return 0;
+  
+  const elapsed = Date.now() - lobbyState.gameStartTime;
+  const remaining = GAME_SETTINGS.GAME_DURATION * 1000 - elapsed;
+  
+  return Math.max(0, Math.floor(remaining / 1000));
+}
+
+export function getAvailableLobbies() {
+  return Object.values(lobbies)
+    .filter(l => l.lobby.state === "waiting" && l.lobby.players.length < l.lobby.maxPlayers)
+    .map(l => l.lobby);
 }

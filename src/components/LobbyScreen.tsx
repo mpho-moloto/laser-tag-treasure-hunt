@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useGame } from "../context/GameContext";
 
 const LobbyScreen: React.FC = () => {
-  const { player, currentLobby, availableLobbies, createLobby, joinLobby, startGame, socket, spectateLobby } = useGame();
+  const { player, currentLobby, availableLobbies, createLobby, joinLobby, startGame, socket, spectateLobby, leaveLobby, playerReady } = useGame();
   const [lobbyName, setLobbyName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState("");
@@ -30,16 +30,19 @@ const LobbyScreen: React.FC = () => {
     color, fontSize: size, textShadow: shadow, fontWeight: 'bold' 
   });
 
-  const cyberpunkButton = (gradient: string, textColor: string) => ({
+  const cyberpunkButton = (gradient: string, textColor: string, disabled = false) => ({
     padding: '15px 30px', border: 'none', borderRadius: '10px', background: gradient,
-    color: textColor, fontSize: '1.1rem', fontWeight: '600', cursor: 'pointer', width: '100%',
-    boxShadow: `0 0 20px ${textColor === 'black' ? 'rgba(0, 255, 255, 0.3)' : 'rgba(255, 0, 128, 0.3)'}`
+    color: textColor, fontSize: '1.1rem', fontWeight: '600', 
+    cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.7 : 1,
+    width: '100%', boxShadow: `0 0 20px ${textColor === 'black' ? 'rgba(0, 255, 255, 0.3)' : 'rgba(255, 0, 128, 0.3)'}`
   });
 
   const cyberpunkCard = () => ({
     padding: '25px', background: 'rgba(0, 0, 0, 0.4)', borderRadius: '15px', 
     border: '2px solid rgba(0, 255, 255, 0.2)', textAlign: 'center' as const
   });
+
+  const currentPlayer = currentLobby?.players.find(p => p.id === player?.id);
 
   return (
     <div style={{ maxWidth: "900px", margin: "20px", padding: "40px", background: "rgba(0, 0, 0, 0.8)", 
@@ -76,26 +79,70 @@ const LobbyScreen: React.FC = () => {
             
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "15px", marginBottom: "30px" }}>
               {currentLobby.players.map((p) => (
-                <div key={p.id} style={{ padding: "20px", background: "rgba(0, 0, 0, 0.4)", borderRadius: "12px", 
-                                        border: "2px solid rgba(0, 255, 255, 0.2)", textAlign: "center" }}>
-                  <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: p.color, 
-                                border: "2px solid #00ffff", margin: "0 auto 10px", boxShadow: "0 0 15px rgba(0, 255, 255, 0.3)" }} />
+                <div key={p.id} style={{ 
+                  padding: "20px", 
+                  background: "rgba(0, 0, 0, 0.4)", 
+                  borderRadius: "12px", 
+                  border: p.isReady ? "2px solid #00ff88" : "2px solid rgba(0, 255, 255, 0.2)",
+                  textAlign: "center" 
+                }}>
+                  <div style={{ 
+                    width: "40px", 
+                    height: "40px", 
+                    borderRadius: "50%", 
+                    backgroundColor: p.color, 
+                    border: "2px solid #00ffff", 
+                    margin: "0 auto 10px",
+                    boxShadow: p.isReady ? "0 0 15px rgba(0, 255, 136, 0.5)" : "0 0 15px rgba(0, 255, 255, 0.3)" 
+                  }} />
                   <span style={{ color: "#00ffff", display: "block" }}>{p.name}</span>
+                  {p.isReady && <span style={{ color: "#00ff88", fontSize: "0.9em" }}>READY ✓</span>}
                   {p.id === player?.id && <span style={{ color: "#ff0080", fontSize: "0.9em" }}>(YOU)</span>}
                 </div>
               ))}
             </div>
           </div>
 
+          {/* Ready System */}
+          <div style={{ marginBottom: "30px" }}>
+            {currentLobby.state === "waiting" && (
+              <>
+                {!currentPlayer?.isReady ? (
+                  <button onClick={() => playerReady(true)} style={cyberpunkButton('linear-gradient(45deg, #00ff88, #00ffff)', 'black')}>
+                    ✅ READY UP
+                  </button>
+                ) : (
+                  <button onClick={() => playerReady(false)} style={cyberpunkButton('linear-gradient(45deg, #ff6b6b, #ff0080)', 'white')}>
+                    ❌ NOT READY
+                  </button>
+                )}
+              </>
+            )}
+            
+            {currentLobby.state === "pregame" && (
+              <div style={{ 
+                padding: "20px", 
+                background: "linear-gradient(45deg, #00ff88, #00ffff)", 
+                borderRadius: "15px", 
+                textAlign: "center",
+                color: "black",
+                fontWeight: "bold",
+                marginBottom: "20px"
+              }}>
+                🛒 PRE-GAME STORE OPEN! PURCHASE WEAPONS BEFORE BATTLE!
+              </div>
+            )}
+          </div>
+
           {/* Action Buttons */}
           <div style={{ display: "flex", flexDirection: "column", gap: "15px", alignItems: "center" }}>
-            {currentLobby.players[0]?.id === player?.id && (
+            {currentLobby.players[0]?.id === player?.id && currentLobby.state === "pregame" && (
               <button onClick={handleStartGame} style={cyberpunkButton('linear-gradient(45deg, #00ffff, #00ff88)', 'black')}>
                 🚀 INITIATE COMBAT
               </button>
             )}
-            <button onClick={() => window.location.reload()} style={cyberpunkButton('linear-gradient(45deg, #ff6b6b, #c44569)', 'white')}>
-              ← ABORT MISSION
+            <button onClick={leaveLobby} style={cyberpunkButton('linear-gradient(45deg, #ff6b6b, #c44569)', 'white')}>
+              ← LEAVE LOBBY
             </button>
           </div>
         </div>
