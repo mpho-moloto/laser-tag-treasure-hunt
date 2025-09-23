@@ -105,38 +105,20 @@ const LobbyScreen: React.FC = () => {
 
           {/* Ready System */}
           <div style={{ marginBottom: "30px" }}>
-            {currentLobby.state === "waiting" && (
-              <>
-                {!currentPlayer?.isReady ? (
-                  <button onClick={() => playerReady(true)} style={cyberpunkButton('linear-gradient(45deg, #00ff88, #00ffff)', 'black')}>
-                    ✅ READY UP
-                  </button>
-                ) : (
-                  <button onClick={() => playerReady(false)} style={cyberpunkButton('linear-gradient(45deg, #ff6b6b, #ff0080)', 'white')}>
-                    ❌ NOT READY
-                  </button>
-                )}
-              </>
-            )}
-            
-            {currentLobby.state === "pregame" && (
-              <div style={{ 
-                padding: "20px", 
-                background: "linear-gradient(45deg, #00ff88, #00ffff)", 
-                borderRadius: "15px", 
-                textAlign: "center",
-                color: "black",
-                fontWeight: "bold",
-                marginBottom: "20px"
-              }}>
-                🛒 PRE-GAME STORE OPEN! PURCHASE WEAPONS BEFORE BATTLE!
-              </div>
+            {!currentPlayer?.isReady ? (
+              <button onClick={() => playerReady(true)} style={cyberpunkButton('linear-gradient(45deg, #00ff88, #00ffff)', 'black')}>
+                ✅ READY UP
+              </button>
+            ) : (
+              <button onClick={() => playerReady(false)} style={cyberpunkButton('linear-gradient(45deg, #ff6b6b, #ff0080)', 'white')}>
+                ❌ NOT READY
+              </button>
             )}
           </div>
 
           {/* Action Buttons */}
           <div style={{ display: "flex", flexDirection: "column", gap: "15px", alignItems: "center" }}>
-            {currentLobby.players[0]?.id === player?.id && currentLobby.state === "pregame" && (
+            {currentLobby.players[0]?.id === player?.id && (
               <button onClick={handleStartGame} style={cyberpunkButton('linear-gradient(45deg, #00ffff, #00ff88)', 'black')}>
                 🚀 INITIATE COMBAT
               </button>

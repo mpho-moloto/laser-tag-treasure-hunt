@@ -45,7 +45,14 @@ export function setupSockets(io: Server) {
         io.to(`lobby-${lobbyId}`).emit("lobby-update", lobbyState.lobby);
         sendAvailableLobbies();
       } else {
-        socket.emit("lobby-error", "Failed to join lobby - it may be full or not exist");
+        // NEW: Specific error messages for color conflicts
+        if (lobbies[lobbyId] && lobbies[lobbyId].lobby.players.some(p => p.color === player.color)) {
+          socket.emit("lobby-error", "Color already exists in this lobby! Please choose a different color.");
+        } else if (lobbies[lobbyId] && lobbies[lobbyId].lobby.players.length >= lobbies[lobbyId].lobby.maxPlayers) {
+          socket.emit("lobby-error", "Lobby is full! Please try another lobby.");
+        } else {
+          socket.emit("lobby-error", "Failed to join lobby - it may not exist");
+        }
       }
     });
 
@@ -100,13 +107,14 @@ export function setupSockets(io: Server) {
 
     socket.on("shoot", (data: { playerId: number; targetColor: string; lobbyId: number }) => {
       const { playerId, targetColor, lobbyId } = data;
+      console.log(`🔫 Shoot request: Player ${playerId} shooting color ${targetColor} in lobby ${lobbyId}`);
+      
       const updatedLobby = handleShoot(playerId, targetColor, lobbyId);
       
       if (updatedLobby) {
         io.to(`lobby-${lobbyId}`).emit("game-update", updatedLobby);
         io.to(`spectator-${lobbyId}`).emit("game-update", updatedLobby);
 
-        // Check for game end after each shot
         const alivePlayers = updatedLobby.lobby.players.filter(p => p.lives > 0);
         if (alivePlayers.length <= 1) {
           io.to(`lobby-${lobbyId}`).emit("game-over");
@@ -146,7 +154,6 @@ export function setupSockets(io: Server) {
 
     socket.on("disconnect", () => {
       console.log(`🔌 Client disconnected: ${socket.id}`);
-      // Clean up any lobbies this player was in
       Object.entries(lobbies).forEach(([lobbyId, lobbyState]) => {
         const playerInLobby = lobbyState.lobby.players.find(p => p.id === parseInt(socket.id));
         if (playerInLobby) {
@@ -158,7 +165,6 @@ export function setupSockets(io: Server) {
     });
   });
 
-  // Game timer check
   setInterval(() => {
     Object.entries(lobbies).forEach(([lobbyId, lobbyState]) => {
       if (lobbyState.active) {

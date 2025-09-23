@@ -50,6 +50,13 @@ export function joinLobby(player: Player, lobbyId: number) {
     return null;
   }
 
+  // NEW: Check if color already exists in this lobby
+  const colorExists = lobbyState.lobby.players.some(p => p.color === player.color);
+  if (colorExists) {
+    console.log(`❌ Color ${player.color} already exists in lobby ${lobbyId}`);
+    return null; // Prevent joining
+  }
+
   if (lobbyState.lobby.players.find(p => p.id === player.id)) {
     console.log("ℹ️ Player already in lobby:", player.id);
     return lobbyState;
@@ -62,7 +69,7 @@ export function joinLobby(player: Player, lobbyId: number) {
 
   const initializedPlayer = initializePlayer(player);
   lobbyState.lobby.players.push(initializedPlayer);
-  console.log("✅ Player joined lobby:", player.name, "Lobby:", lobbyId);
+  console.log("✅ Player joined lobby:", player.name, "Color:", player.color, "Lobby:", lobbyId);
   return lobbyState;
 }
 
@@ -73,11 +80,9 @@ export function leaveLobby(playerId: number, lobbyId: number) {
     return null;
   }
 
-  // Remove player from lobby
   lobbyState.lobby.players = lobbyState.lobby.players.filter(p => p.id !== playerId);
   console.log("✅ Player left lobby:", playerId, "from lobby:", lobbyId);
 
-  // Delete lobby if empty
   if (lobbyState.lobby.players.length === 0) {
     delete lobbies[lobbyId];
     console.log("🗑️ Deleted empty lobby:", lobbyId);
@@ -96,7 +101,6 @@ export function setPlayerReady(playerId: number, lobbyId: number, isReady: boole
     player.isReady = isReady;
     console.log("✅ Player ready state:", player.name, "ready:", isReady);
     
-    // Check if all players are ready to move to pregame
     const allReady = lobbyState.lobby.players.every(p => p.isReady);
     if (allReady && lobbyState.lobby.players.length >= 2 && lobbyState.lobby.state === "waiting") {
       lobbyState.lobby.state = "pregame";
@@ -119,7 +123,6 @@ export function startGame(lobbyId: number) {
     return null;
   }
 
-  // Reset player states for new game
   lobbyState.lobby.players.forEach(player => {
     player.score = 0;
     player.lives = GAME_SETTINGS.INITIAL_LIVES;
@@ -139,14 +142,28 @@ export function startGame(lobbyId: number) {
   return lobbyState;
 }
 
+// ENHANCED: Color validation for shooting
 export function handleShoot(playerId: number, targetColor: string, lobbyId: number) {
   const lobbyState = lobbies[lobbyId];
   if (!lobbyState || !lobbyState.active) return null;
 
   const shooter = lobbyState.lobby.players.find(p => p.id === playerId);
+  if (!shooter || shooter.lives <= 0) return lobbyState;
+
+  // NEW: Check if target color actually exists in this lobby
+  const validTargetColors = lobbyState.lobby.players
+    .filter(p => p.id !== playerId && p.lives > 0)
+    .map(p => p.color);
+  
+  // Only allow shooting if the color exists in the lobby
+  if (!validTargetColors.includes(targetColor)) {
+    console.log(`❌ Invalid target color: ${targetColor}. Valid colors: ${validTargetColors}`);
+    return lobbyState; // No points awarded for invalid colors
+  }
+
   const target = lobbyState.lobby.players.find(p => p.color === targetColor && p.id !== playerId && p.lives > 0);
   
-  if (!shooter || !target || shooter.lives <= 0) return lobbyState;
+  if (!target) return lobbyState;
 
   // Check ammo
   if (shooter.ammo <= 0) {
@@ -161,7 +178,7 @@ export function handleShoot(playerId: number, targetColor: string, lobbyId: numb
     return lobbyState;
   }
 
-  // Consume ammo
+  // Consume ammo and shoot
   shooter.ammo--;
   shooter.lastShotTime = now;
 
@@ -169,7 +186,7 @@ export function handleShoot(playerId: number, targetColor: string, lobbyId: numb
   const damage = shooter.hasPowerUp ? shooter.currentWeapon.damage * 2 : shooter.currentWeapon.damage;
   target.lives -= damage;
   
-  // Award points
+  // Award points for hit
   shooter.score += GAME_SETTINGS.POINTS_PER_HIT;
 
   // Check if target died
@@ -179,7 +196,6 @@ export function handleShoot(playerId: number, targetColor: string, lobbyId: numb
     shooter.kills++;
     shooter.score += GAME_SETTINGS.POINTS_PER_KILL;
     
-    // Check for game end
     checkGameEnd(lobbyState);
   }
 
