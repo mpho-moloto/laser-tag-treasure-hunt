@@ -1,0 +1,547 @@
+/* Arena Global Theme */
+.cyber-bg {
+  background: #0a0a12;
+  background-image: 
+    linear-gradient(45deg, #0a0a12 0%, #1a1a2e 50%, #0a0a12 100%),
+    radial-gradient(circle at 20% 80%, rgba(105, 0, 255, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 0, 128, 0.3) 0%, transparent 50%);
+  min-height: 100vh;
+  font-family: 'Orbitron', 'Courier New', monospace;
+}
+
+.glow-border {
+  border: 1px solid #00f3ff;
+  border-image: linear-gradient(45deg, #00f3ff, #ff00cc) 1;
+  box-shadow: 
+    0 0 15px rgba(0, 243, 255, 0.5),
+    inset 0 0 15px rgba(0, 243, 255, 0.1);
+}
+
+.neon-text {
+  color: #ffffff;
+  text-shadow: 
+    0 0 5px #fff,
+    0 0 10px #00f3ff,
+    0 0 15px #00f3ff,
+    0 0 20px #ff00cc,
+    0 0 35px #ff00cc;
+}
+
+/* Home Screen Styles */
+.home-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.title-section {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.main-title {
+  font-size: 4rem;
+  margin: 0;
+  background: linear-gradient(45deg, #00f3ff, #ff00cc);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 30px rgba(255, 0, 128, 0.5);
+}
+
+.access-panel {
+  background: rgba(10, 15, 30, 0.9);
+  padding: 2rem;
+  border-radius: 20px;
+  text-align: center;
+  min-width: 300px;
+}
+
+.code-input {
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid #00f3ff;
+  color: #00fff2;
+  padding: 1rem;
+  font-size: 1.5rem;
+  text-align: center;
+  width: 200px;
+  margin: 1rem 0;
+  border-radius: 10px;
+  letter-spacing: 0.2em;
+}
+
+.entry-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.fighter-btn, .watcher-btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.fighter-btn {
+  background: linear-gradient(45deg, #ff00cc, #00f3ff);
+  color: black;
+}
+
+.watcher-btn {
+  background: linear-gradient(45deg, #666, #999);
+  color: white;
+}
+
+/* Battle Interface */
+.hud-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.weapon-strip {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.weapon-slot {
+  padding: 0.5rem;
+  border: 2px solid #333;
+  border-radius: 8px;
+  min-width: 80px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.weapon-slot.owned {
+  border-color: #00f3ff;
+}
+
+.weapon-slot.active {
+  border-color: #ff00cc;
+  background: rgba(255, 0, 128, 0.2);
+}
+
+.weapon-slot.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.weapon-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Radar Styles */
+.radar-container {
+  position: absolute;
+  top: 100px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 1rem;
+  border-radius: 10px;
+  border: 1px solid #00f3ff;
+}
+
+.radar-dish {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(0, 243, 255, 0.1);
+  margin: 1rem 0;
+}
+
+.radar-circle {
+  position: absolute;
+  border: 1px solid rgba(0, 243, 255, 0.5);
+  border-radius: 50%;
+}
+
+.radar-circle.outer {
+  width: 160px;
+  height: 160px;
+  top: 0;
+  left: 0;
+}
+
+.radar-circle.middle {
+  width: 100px;
+  height: 100px;
+  top: 30px;
+  left: 30px;
+}
+
+.radar-circle.inner {
+  width: 40px;
+  height: 40px;
+  top: 60px;
+  left: 60px;
+}
+
+.player-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.pulse-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+.scan-line {
+  position: absolute;
+  width: 160px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00f3ff, transparent);
+  top: 50%;
+  animation: scan-rotate 4s linear infinite;
+}
+
+@keyframes scan-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Store Overlay */
+.store-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(10, 15, 30, 0.95);
+  padding: 2rem;
+  border-radius: 15px;
+  border: 3px solid #ff00cc;
+  z-index: 1000;
+  min-width: 300px;
+}
+
+.store-items {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.store-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  border: 1px solid #00f3ff;
+}
+
+.buy-btn {
+  background: linear-gradient(45deg, #00f3ff, #0099ff);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  color: black;
+  font-weight: bold;
+}
+
+.buy-btn:disabled {
+  background: #666;
+  cursor: not-allowed;
+}
+
+/* Lobby Styles */
+.lobby-screen {
+  padding: 20px;
+  background: linear-gradient(135deg, #0a0a2a, #1a1a3a);
+  min-height: 100vh;
+  color: white;
+}
+
+.lobby-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.lobby-header h1 {
+  color: #00f3ff;
+  text-shadow: 0 0 10px #00f3ff;
+  margin-bottom: 10px;
+}
+
+.lobby-info {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid #00f3ff;
+}
+
+.players-section h2 {
+  text-align: center;
+  color: #00f3ff;
+  margin-bottom: 20px;
+}
+
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.player-card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.player-card:hover {
+  transform: translateY(-5px);
+}
+
+.player-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.player-name {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.commander-crown {
+  font-size: 1.2em;
+}
+
+.color-swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin: 0 auto;
+  border: 2px solid white;
+}
+
+.lobby-controls {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.start-battle-btn {
+  background: linear-gradient(45deg, #ff00cc, #00f3ff);
+  color: black;
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.2em;
+  border-radius: 25px;
+  cursor: pointer;
+  margin: 10px;
+  font-weight: bold;
+}
+
+.exit-btn {
+  background: rgba(255, 0, 0, 0.3);
+  color: white;
+  border: 1px solid red;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  margin: 10px;
+}
+
+.connection-warning {
+  background: rgba(255, 0, 0, 0.2);
+  border: 1px solid red;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  margin-top: 20px;
+}
+
+/*Player styles*/
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.player-card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  border: 2px solid;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.player-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 243, 255, 0.3);
+}
+
+.player-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.player-name {
+  font-weight: bold;
+  font-size: 1.1em;
+  color: #00f3ff;
+}
+
+.commander-crown {
+  font-size: 1.3em;
+  animation: glow 2s infinite;
+}
+
+@keyframes glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.color-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin: 0 auto;
+  border: 3px solid white;
+  box-shadow: 0 0 10px currentColor;
+}
+
+/*Battle arena style*/
+.battle-arena {
+  position: relative;
+  min-height: 100vh;
+  background: #0a0a0a;
+  color: white;
+}
+
+.arena-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.8);
+  border-bottom: 2px solid #00f3ff;
+}
+
+.timer-glow, .score-glow, .player-glow {
+  font-size: 1.2em;
+  font-weight: bold;
+  text-shadow: 0 0 10px currentColor;
+}
+
+.combat-view {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.target-reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3em;
+  color: #ff0000;
+  text-shadow: 0 0 10px #ff0000;
+  pointer-events: none;
+}
+
+.camera-fallback {
+  width: 80%;
+  height: 400px;
+  background: #1a1a1a;
+  border: 2px dashed #00f3ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shop-btn {
+  background: #ff00cc;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.scan-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.grid-point {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid red;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: pulse 2s infinite;
+}
+@keyframes muzzleFlash {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+
+.points-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  color: gold;
+}
+@keyframes muzzleFlash {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+
+.points-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  color: gold;
+}
