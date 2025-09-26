@@ -1,3 +1,6 @@
+// Student Number: 2023094242
+// Student Number: 2019042973
+
 import React from 'react';
 
 export default function ArenaHUD({ onFire, ammunition, isReloading }) {
@@ -6,15 +9,15 @@ export default function ArenaHUD({ onFire, ammunition, isReloading }) {
             <div className="fire-control">
                 <button 
                     className={`fire-btn ${isReloading ? 'reloading' : ''}`}
-                    onClick={onFire}
-                    disabled={isReloading || ammunition <= 0}
+                    onClick={onFire} // Fire weapon when clicked
+                    disabled={isReloading || ammunition <= 0} // Disable if reloading or out of ammo
                 >
                     <span className="btn-icon">🎯</span>
                     <span className="btn-text">OPEN FIRE</span>
-                    <span className="ammo-count">{ammunition}</span>
+                    <span className="ammo-count">{ammunition}</span> {/* Display current ammo count */}
                 </button>
                 
-                {isReloading && (
+                {isReloading && ( // Show reload indicator only when reloading
                     <div className="reload-indicator">
                         <div className="reload-bar"></div>
                         <span>RELOADING...</span>
@@ -30,7 +33,7 @@ export default function ArenaHUD({ onFire, ammunition, isReloading }) {
                 <div className="stat-item">
                     <span className="stat-label">STATUS</span>
                     <span className="stat-value">
-                        {isReloading ? 'RELOADING' : 'READY'}
+                        {isReloading ? 'RELOADING' : 'READY'} {/* Dynamic status text */}
                     </span>
                 </div>
             </div>
