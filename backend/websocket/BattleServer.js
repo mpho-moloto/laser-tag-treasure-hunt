@@ -1,15 +1,25 @@
+// Student Number: 2023094242
+// Student Number: 2019042973
+
 import { WebSocketServer } from 'ws';
 
+// BattleServer manages all WebSocket connections, sessions, and real-time game logic for laser tag battles.
 class BattleServer {
   constructor(server) {
+    // Create a WebSocket server attached to the provided HTTP server
     this.wss = new WebSocketServer({ server });
+    // Store all active game sessions, keyed by game code
     this.sessions = new Map();
+    // Set up connection handler for new clients
     this.setupConnectionHandler();
+    // Start the main game loop for all sessions
     this.startGameLoop();
   }
 
+  // Handles new WebSocket connections from players and spectators
   setupConnectionHandler() {
     this.wss.on('connection', (ws, req) => {
+      // Parse URL to extract game code, room type, player name, and color
       const url = new URL(req.url, 'http://localhost');
       const pathParts = url.pathname.split('/');
       const gameCode = pathParts[1];
@@ -17,12 +27,14 @@ class BattleServer {
       const playerName = url.searchParams.get('player');
       const playerColor = url.searchParams.get('color');
 
+      // If no game code, close connection
       if (!gameCode) {
         ws.close(1000, 'Game code required');
         return;
       }
 
      
+      // Create or retrieve the session for this game code
       let session = this.sessions.get(gameCode);
       if (!session) {
         session = {
@@ -51,6 +63,7 @@ class BattleServer {
       }
 
       
+      // Handle spectator connections
       if (roomType === 'spectate') {
         const spectatorId = `spectator-${Date.now()}`;
         session.spectators.set(spectatorId, {
@@ -59,6 +72,7 @@ class BattleServer {
           joinedAt: Date.now()
         });
 
+        // Send current game state to the new spectator
         this.sendToPlayer(ws, {
           type: 'spectatorUpdate',
           gameState: {
@@ -80,28 +94,28 @@ class BattleServer {
         return;
       }
 
-      
+      // Handle player connections
       if (!playerName) {
         ws.close(1000, 'Player name required');
         return;
       }
 
+      // Generate a unique player ID and remove any previous connections for this player name
       const playerId = `${playerName}-${Date.now()}`;
-      
-
       this.removePlayerFromSession(session, playerName);
 
+      // Track scanned colors for validation
       if (playerColor) {
         session.scannedColors.add(playerColor);
       }
-
-
+      // Assign commander if none exists and player joins lobby
       if (!session.commander && roomType === 'lobby') {
         session.commander = playerName;
         console.log(`👑 ${playerName} assigned as commander for ${gameCode}`);
       }
 
 
+      // Add player to the session with initial stats
       session.players.set(playerId, {
         id: playerId,
         name: playerName,
@@ -130,6 +144,7 @@ class BattleServer {
       console.log(`🎯 ${playerName} joined ${gameCode} as ${roomType}. Commander: ${session.commander}`);
 
      
+      // If the battle has started, redirect lobby joiners to the battle
       if (session.battleStarted && roomType === 'lobby') {
      
         const player = session.players.get(playerId);
@@ -145,8 +160,10 @@ class BattleServer {
         });
       }
 
+      // Notify all clients in the session of the updated player list
       this.broadcastSessionUpdate(session);
 
+      // Handle incoming messages from this player
       ws.on('message', (data) => {
         try {
           const message = JSON.parse(data);
@@ -203,6 +220,7 @@ class BattleServer {
     });
   }
 
+  // Handles messages sent by players (e.g., start battle, fire, purchase, reload, leave)
   handleMessage(session, playerId, message) {
     const player = session.players.get(playerId);
     if (!player) return;
@@ -229,7 +247,7 @@ class BattleServer {
     }
   }
 
-
+  // Handles GPS updates from players
   handleGpsUpdate(session, player, message) {
     if (message.latitude && message.longitude) {
       player.stats.gpsPosition = {
@@ -255,7 +273,7 @@ class BattleServer {
     this.broadcastArenaUpdate(session);
   }
 
-
+  // Updates the GPS bounds for the session based on new player coordinates
   updateGpsBounds(session, lat, lng) {
     session.gpsBounds.minLat = Math.min(session.gpsBounds.minLat, lat);
     session.gpsBounds.maxLat = Math.max(session.gpsBounds.maxLat, lat);
@@ -263,7 +281,7 @@ class BattleServer {
     session.gpsBounds.maxLng = Math.max(session.gpsBounds.maxLng, lng);
   }
 
-
+  // Converts GPS coordinates to minimap coordinates (0-100 scale)
   gpsToMinimap(session, lat, lng) {
     const bounds = session.gpsBounds;
     
@@ -280,6 +298,7 @@ class BattleServer {
     };
   }
 
+  // Handles the start of a battle, initiated by the commander
   handleStartBattle(session, player) {
   
     if (player.name === session.commander && !session.battleStarted) {
@@ -331,15 +350,19 @@ class BattleServer {
     }
   }
 
+  // Handles a player's firing action, including hit/miss logic and updating stats
   handleFire(session, shooter, message) {
     const now = Date.now();
     const shotCooldown = 500;
 
+
+    // Validate shooter state
     if (shooter.stats.isEliminated) {
       console.log(`🚫 ${shooter.name} tried to shoot but is eliminated`);
       return;
     }
     
+    // Validate game state
     if (session.gameState !== 'battle') {
       console.log(`🚫 ${shooter.name} tried to shoot but game not active`);
       return;
@@ -348,9 +371,11 @@ class BattleServer {
     if (now - shooter.stats.lastShot < shotCooldown) return;
     if (shooter.stats.ammo <= 0) return;
 
+    //
     shooter.stats.ammo--;
     shooter.stats.lastShot = now;
 
+    // Validate target color
     if (!session.scannedColors.has(message.targetColor)) {
       shooter.stats.misses++;
       this.sendToPlayer(shooter.ws, {
@@ -361,6 +386,7 @@ class BattleServer {
       return;
     }
 
+    // Find the target player by color (excluding the shooter)
     const target = Array.from(session.players.values()).find(player => 
       player.color === message.targetColor && 
       player.name !== shooter.name &&
@@ -369,6 +395,7 @@ class BattleServer {
     );
 
     if (target) {
+      // Calculate damage with weapon and power-ups
       const weaponDamage = {
         pistol: 25,
         rifle: 35,
@@ -377,17 +404,19 @@ class BattleServer {
 
       let baseDamage = weaponDamage[message.weapon] || 25;
 
+      // Apply double damage power-up if active
       if (shooter.stats.activePowerups.doubleDamage) {
         baseDamage *= 2;
       }
 
       const pointsEarned = 25;
-      
+      // Update stats for hit
       shooter.stats.points += pointsEarned;
       shooter.stats.hits++;
       
       target.stats.health = Math.max(0, target.stats.health - baseDamage);
 
+      // Notify both players if the hit
       this.sendToPlayer(shooter.ws, {
         type: 'hitConfirmed',
         damage: baseDamage,
@@ -413,6 +442,7 @@ class BattleServer {
       this.checkWinConditions(session);
 
     } else {
+      // No valid target found, count as miss
       shooter.stats.misses++;
       this.sendToPlayer(shooter.ws, {
         type: 'hitResult',
@@ -424,6 +454,7 @@ class BattleServer {
     this.broadcastArenaUpdate(session);
   }
 
+  // Handles when a player loses a life, including elimination logic
   handleLifeLost(session, target, shooter) {
     target.stats.lives--;
     target.stats.deaths++;
@@ -444,6 +475,7 @@ class BattleServer {
     }
   }
 
+  // Handles player elimination from the game
   handlePlayerElimination(session, target, killer) {
     target.stats.isEliminated = true;
     killer.stats.points += 100;
@@ -459,6 +491,7 @@ class BattleServer {
     this.checkWinConditions(session);
   }
 
+  // Handles a player leaving the session
   handlePurchase(session, player, message) {
     const shopItems = {
       rifle: { cost: 100, ammo: 10, type: 'weapon' },
@@ -499,6 +532,7 @@ class BattleServer {
     }
   }
 
+  // Handles a player leaving the session
   handleReload(session, player, message) {
     const weaponAmmo = {
       pistol: 5,
@@ -506,6 +540,7 @@ class BattleServer {
       shotgun: 6
     };
 
+    // Validate weapon
     const ammoCount = weaponAmmo[message.weapon] || 5;
     player.stats.ammo = ammoCount;
 
@@ -518,6 +553,7 @@ class BattleServer {
     this.broadcastArenaUpdate(session);
   }
 
+  // Checks if win conditions are met (last player standing or time up)
   checkWinConditions(session) {
     if (!session.battleStarted || session.gameState !== 'battle') return;
 
@@ -539,6 +575,7 @@ class BattleServer {
     }
   }
 
+  // Main game loop that updates game state every second
   startGameLoop() {
     setInterval(() => {
       const now = Date.now();
@@ -567,6 +604,7 @@ class BattleServer {
     }, 1000);
   }
 
+  // Ends the game, determines winner, and notifies all clients
   endGame(session, winner = null, winCondition = 'time_up') {
     if (session.gameState === 'finished') return;
     
@@ -588,6 +626,7 @@ class BattleServer {
 
     const results = this.getPlayerData(session).sort((a, b) => b.points - a.points);
     
+    // Mark all players as eliminated
     session.players.forEach(player => {
       player.stats.isEliminated = true;
     });
@@ -615,6 +654,7 @@ class BattleServer {
     }, 30000);
   }
 
+  // Broadcasts the current arena state to all players and spectators
   broadcastArenaUpdate(session) {
     const gameState = {
       type: 'arenaUpdate',
@@ -626,6 +666,7 @@ class BattleServer {
       playerStats: this.getPlayerData(session)
     };
 
+    
     this.broadcastToSession(session, gameState);
     this.broadcastToSpectators(session, {
       type: 'spectatorUpdate',
@@ -638,6 +679,7 @@ class BattleServer {
     });
   }
 
+  // Retrieves player data for broadcasting
   getPlayerData(session) {
     return Array.from(session.players.values()).map(player => ({
       tag: player.name,
@@ -659,6 +701,7 @@ class BattleServer {
     }));
   }
 
+  // Broadcasts a message to all players in the session
   broadcastToSession(session, message) {
     const messageStr = JSON.stringify(message);
     session.players.forEach(player => {
@@ -668,6 +711,7 @@ class BattleServer {
     });
   }
 
+  // Broadcasts a message to all spectators in the session
   broadcastToSpectators(session, message) {
     const messageStr = JSON.stringify(message);
     session.spectators.forEach(spectator => {
@@ -677,6 +721,7 @@ class BattleServer {
     });
   }
 
+  // Removes any existing player with the same name from the session
   removePlayerFromSession(session, playerName) {
     for (const [id, player] of session.players) {
       if (player.name === playerName) {
@@ -687,6 +732,7 @@ class BattleServer {
     }
   }
 
+  // Broadcasts updated session info (e.g., player list, commander) to all clients
   broadcastSessionUpdate(session) {
     const lobbyPlayers = Array.from(session.players.values())
       .filter(player => player.room === 'lobby');
@@ -702,12 +748,14 @@ class BattleServer {
     });
   }
 
+  // Sends a message to a specific player
   sendToPlayer(ws, message) {
     if (ws.readyState === 1) {
       ws.send(JSON.stringify(message));
     }
   }
 
+  // Generates a random position for a player on the minimap (0-100 scale)
   generateRandomPosition() {
     return {
       x: Math.floor(Math.random() * 100),
@@ -715,5 +763,5 @@ class BattleServer {
     };
   }
 }
-
+// Export the BattleServer class for use in other modules
 export default BattleServer;

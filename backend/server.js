@@ -1,18 +1,20 @@
 // Student Number: 2023094242
 // Student Number: 2019042973
 
-// server.js
+// Entry point for the Laser Tag Arena backend server. Sets up an Express server to serve static files
+// and a WebSocket server for real-time game communication using the BattleServer class.
 import express from 'express';
 import { createServer } from 'http';
 import BattleServer from './websocket/BattleServer.js';
 
-const app = express();
-const server = createServer(app);
-const battleServer = new BattleServer(server); // Initialize WebSocket battle server
+const app = express(); // Create an Express application
+const server = createServer(app); // Create an HTTP server using Express
+const battleServer = new BattleServer(server); // Attach the WebSocket BattleServer to the HTTP server
 
-app.use(express.static('public')); // Serve static files from public directory
+// Serve static files from the 'public' directory (e.g., frontend assets)
+app.use(express.static('public'));
 
-// Root route - server status page
+// Define a simple homepage for the server root
 app.get('/', (req, res) => {
   res.send(`
     <html>
@@ -48,6 +50,7 @@ app.get('/', (req, res) => {
   `);
 });
 
+// Start the HTTP and WebSocket server on the specified port (default 4000)
 const PORT = process.env.PORT || 4000; // Use environment port or default to 4000
 server.listen(PORT, () => {
   console.log(`🎯 Last Lap Server running on port ${PORT}`);
@@ -55,4 +58,5 @@ server.listen(PORT, () => {
   console.log(`🌐 HTTP: http://localhost:${PORT}`);
 });
 
+// Export the server for potential external use
 export default server;
