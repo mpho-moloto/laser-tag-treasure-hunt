@@ -35,7 +35,8 @@ export default function GameLobby() {
     try {
       // Construct WebSocket URL with game parameters
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'laser-tag-treasure-hunt-1-xzbg.onrender.com';
-const wsUrl = `wss://${backendUrl}/${arenaCode}/lobby?player=${encodeURIComponent(playerTag)}&color=${encodeURIComponent(Color.replace('#',''))}`;
+const wsUrl = `wss://${backendUrl}/ws/${arenaCode}/lobby?player=${encodeURIComponent(playerTag)}&color=${encodeURIComponent(Color.replace('#',''))}`;
+
 const ws = new WebSocket(wsUrl);
 socketRef.current = ws;
 

@@ -143,7 +143,7 @@ export default function BattleArena() {
 
     try {
      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'laser-tag-treasure-hunt-1-xzbg.onrender.com';
-const wsUrl = `wss://${backendUrl}/${arenaCode}/game?player=${encodeURIComponent(playerTag)}&color=${encodeURIComponent((Color || 'red').replace('#',''))}`;
+const wsUrl = `wss://${backendUrl}/ws/${arenaCode}/game?player=${encodeURIComponent(playerTag)}&color=${encodeURIComponent((Color || 'red').replace('#',''))}`;
 const ws = new WebSocket(wsUrl);
 socketRef.current = ws;
       ws.onopen = () => {
