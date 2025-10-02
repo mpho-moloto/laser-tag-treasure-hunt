@@ -51,11 +51,12 @@ app.get('/', (req, res) => {
 });
 
 // Start the HTTP and WebSocket server on the specified port (default 4000)
-const PORT = process.env.PORT || 4000; // Use environment port or default to 4000
-server.listen(PORT, () => {
+const PORT = process.env.PORT || 4000;
+const HOST = process.env.HOST || '0.0.0.0'; // Use environment port or default to 4000
+server.listen(PORT, HOST, () => {
   console.log(`🎯 Last Lap Server running on port ${PORT}`);
-  console.log(`🔗 WebSocket: ws://localhost:${PORT}`);
-  console.log(`🌐 HTTP: http://localhost:${PORT}`);
+  console.log(`WebSocket Server Ready`);
+  console.log(`HTTP Server Ready`);
 });
 
 // Export the server for potential external use

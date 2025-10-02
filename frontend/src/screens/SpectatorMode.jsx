@@ -30,8 +30,9 @@ export default function SpectatorMode() {
   }, [arenaCode, navigate]);
 
   const connectAsSpectator = () => {
-    const ws = new WebSocket(`ws://localhost:4000/${arenaCode}/spectate`); // Connect to spectate endpoint
-    socketRef.current = ws;
+   const backendUrl = import.meta.env.VITE_BACKEND_URL || 'localhost:4000';
+const ws = new WebSocket(`wss://${backendUrl}/${arenaCode}/spectate`);
+socketRef.current = ws;
 
     ws.onopen = () => setConnectionStatus('connected');
     ws.onclose = () => setConnectionStatus('disconnected');

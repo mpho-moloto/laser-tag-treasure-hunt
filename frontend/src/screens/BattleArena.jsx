@@ -142,10 +142,10 @@ export default function BattleArena() {
     if (socketRef.current) socketRef.current.close();
 
     try {
-      const wsUrl = `ws://localhost:4000/${arenaCode}/game?player=${encodeURIComponent(playerTag)}&color=${encodeURIComponent((Color || 'red').replace('#',''))}`; // Constructs the WebSocket URL with game parameters.
-      const ws = new WebSocket(wsUrl);
-      socketRef.current = ws;
-
+     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'localhost:4000';
+const wsUrl = `wss://${backendUrl}/${arenaCode}/game?player=${encodeURIComponent(playerTag)}&color=${encodeURIComponent((Color || 'red').replace('#',''))}`;
+const ws = new WebSocket(wsUrl);
+socketRef.current = ws;
       ws.onopen = () => {
         setIsConnecting(false);
         ws.send(JSON.stringify({ action: 'join', player: playerTag, color: Color, weapon: activeGun }));

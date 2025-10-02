@@ -34,9 +34,10 @@ export default function GameLobby() {
   const connectToLobby = () => {
     try {
       // Construct WebSocket URL with game parameters
-      const wsUrl = `ws://localhost:4000/${arenaCode}/lobby?player=${encodeURIComponent(playerTag)}&color=${encodeURIComponent(Color.replace('#',''))}`;
-      const ws = new WebSocket(wsUrl);
-      socketRef.current = ws;
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'localhost:4000';
+const wsUrl = `wss://${backendUrl}/${arenaCode}/lobby?player=${encodeURIComponent(playerTag)}&color=${encodeURIComponent(Color.replace('#',''))}`;
+const ws = new WebSocket(wsUrl);
+socketRef.current = ws;
 
       ws.onopen = () => setConnectionStatus('connected'); // Connection established
       ws.onclose = () => setConnectionStatus('disconnected'); // Connection closed
