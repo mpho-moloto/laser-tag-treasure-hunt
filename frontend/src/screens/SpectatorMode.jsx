@@ -30,7 +30,7 @@ export default function SpectatorMode() {
   }, [arenaCode, navigate]);
 
   const connectAsSpectator = () => {const backendUrl = import.meta.env.VITE_BACKEND_URL || 'laser-tag-treasure-hunt-1-xzbg.onrender.com';
-const ws = new WebSocket(`wss://${backendUrl}/${arenaCode}/spectate`);
+const ws = new WebSocket(`ws://${backendUrl}/${arenaCode}/spectate`);
 socketRef.current = ws;
 
     ws.onopen = () => setConnectionStatus('connected');
